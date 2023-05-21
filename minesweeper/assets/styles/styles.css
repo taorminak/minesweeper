@@ -3,7 +3,6 @@
   flex-direction: column;
   width: 100vw;
   height: 100vh;
-
   justify-content: center;
   align-items: center;
 }
@@ -22,6 +21,19 @@
   box-sizing: border-box;
   display: flex;
 }
+
+.mine-displayed {
+    background-image: url('../img/bomb.svg');
+    background-repeat: no-repeat;
+    background-size:contain;
+  }
+
+  .flag {
+    background-image: url('../img/Flag.svg');
+    background-repeat: no-repeat;
+    background-size:contain;
+  }
+  
 
 .cell {
   width: 2.5rem;
@@ -83,6 +95,16 @@
   margin-top: 1rem;
 }
 
+
+
+
+.message-congrats {
+    font-size: 1.3rem;
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  text-align: center;
+  margin-top: 1rem;
+}
+
 .white {
   background-color: white;
 }
@@ -125,9 +147,9 @@
     width: 90vw;
   }
   .rules {
-    width: 90%;
+    width: 100%;
     margin: 1rem;
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
   .new-game {
     width: 8rem;
@@ -135,7 +157,7 @@
     margin-top: 1rem;
   }
   .game-over {
-    font-size: 1.5rem;
-    margin-top: 0.5rem;
+    font-size: 1.2rem;
+    margin-top: 1.5rem;
   }
 }
