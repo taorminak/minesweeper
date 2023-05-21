@@ -24,6 +24,10 @@ container.appendChild(rules);
 const messageCongrats = document.createElement('div');
 messageCongrats.className='message-congrats';
 container.insertBefore(messageCongrats, container.firstChild);
+const audioExplosion = new Audio('./assets/audio/explosion.mp3');
+const audioFlag = new Audio('./assets/audio/flag.mp3');
+const audioLoose = new Audio('./assets/audio/loose.wav');
+const audioWin = new Audio('./assets/audio/win.mp3');
 
 const boardSize = 10;
 const gameBoard = new Array(boardSize)
@@ -104,7 +108,8 @@ function addFlag(event) {
     this.isMine = false;
     numFlags--;
   }
-  else {this.classList.add('flag');
+  else {audioFlag.play();
+    this.classList.add('flag');
     this.isMine = true;
     numFlags++;
   }
@@ -118,8 +123,13 @@ document.querySelector('.game-board').addEventListener('click', (event) => {
 });
 
 function increaseClicks() {
-  numOpened++;
+  
+      
+        numOpened++;
+    
+    console.log(numOpened);
   return numOpened;
+ 
 }
 
 const clearBoard = () => {
@@ -164,7 +174,7 @@ function handleClick(event) {
 
   if (gameBoard[row][col] === 'X') {
     event.target.classList.add('mine-displayed');
-
+    audioExplosion.play();
     announce.classList.add('game-over');
     announce.textContent = 'Game over! Try again!';
     container.appendChild(announce);
@@ -172,12 +182,13 @@ function handleClick(event) {
     const cells = document.querySelectorAll('.cell');
     cells.forEach((cell) => {
       cell.removeEventListener('click', handleClick);
+      cell.removeEventListener('contextmenu', addFlag);
     });
     clearInterval(timerId);
   } else {
+    gameBoard[row][col].isOpen = true;
     const surroundingMines = countSurroundingMines(row, col);
     event.target.textContent = surroundingMines;
-    gameBoard[row][col].isOpen = true;
     if (surroundingMines === 0) {
       event.target.classList.add('white');
       openAdjacentCells(row, col);
@@ -204,19 +215,23 @@ function handleClick(event) {
     }
     event.target.removeEventListener('click', handleClick);
     checkGameComplete(row,col);
+    
   }
 }
+
+let openedCellsCount = 0;
 
 function openAdjacentCells(row, col) {
   for (let i = row - 1; i <= row + 1; i++) {
     for (let j = col - 1; j <= col + 1; j++) {
       if (i >= 0 && i < boardSize && j >= 0 && j < boardSize && !(i == row && j == col)) {
+        
         const cell = document.querySelector(`[data-row="${i}"][data-col="${j}"]`);
         if (!cell.classList.contains('white') && gameBoard[i][j].value !== 'X' && 
         !cell.classList.contains('mine')) {
+          
           const surroundingMines = countSurroundingMines(i, j);
           cell.textContent = surroundingMines;
-          gameBoard[i][j].isOpen = true;
           switch (surroundingMines) {
           case 1:
             cell.classList.add('blue');
@@ -238,7 +253,7 @@ function openAdjacentCells(row, col) {
             break;
           }
           cell.removeEventListener('click', handleClick);
-          checkGameComplete(i, j);
+          //checkGameComplete(i, j);
           if (surroundingMines === 0 && gameBoard[i][j].value !== 'X' && 
           !gameBoard[i][j].isMine) {
             cell.classList.add('white');
@@ -248,10 +263,13 @@ function openAdjacentCells(row, col) {
       }
     }
   }
+  
 }
+
 
 newGame.addEventListener('click', () => {
   grid.innerHTML = '';
+  messageCongrats.innerHTML= '';
   renderBoard();
   announce.remove();
   numUnopened = 100;
@@ -285,9 +303,13 @@ function countSurroundingMines(row, col) {
 }
 
 function congratulateMessage() {
+  console.log(numUnopened);
+    console.log(numMines);
+    console.log(numOpened);
   if (numUnopened == numMines && numOpened == (boardSize * boardSize) - numMines) {
-    clearInterval(timerId);
     
+    clearInterval(timerId);
+    audioWin.play()
     let string = time.textContent;
     let new_string = string.replace('Time: ', '');
 
@@ -300,13 +322,13 @@ function congratulateMessage() {
 
 function checkGameComplete(row,col) {
  
-  if (gameBoard[row][col] && !(gameBoard[row][col]==='X')) {
+  if (gameBoard[row][col].isOpen && !(gameBoard[row][col]==='X')) {
     let newValue = increaseClicks();
     clicks.innerHTML = `Clicks: ${newValue}`;
     
   }
   if (!(gameBoard[row][col]==='X')) {
-    numUnopened=numUnopened-1;
+    numUnopened=numUnopened-1; // считает неправильно! не учитывает рекурсию
   }
   congratulateMessage();
 }
