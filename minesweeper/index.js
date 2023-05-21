@@ -8,11 +8,36 @@ const newGame = document.createElement('button');
 newGame.className = 'new-game';
 newGame.textContent = 'New Game';
 container.appendChild(newGame);
+const clicks = document.createElement('div');
+clicks.className = 'clicks';
+container.insertBefore(clicks, container.firstChild);
+const time = document.createElement('div');
+time.className = 'time';
+container.insertBefore(time, container.firstChild);
+const rules = document.createElement('div');
+rules.className = 'rules';
+rules.innerHTML = `Left click to open the cell.<br/> Right click to set a flag (if you suspect a mine).<br/> In order to win you need to discover the placement of all mines`;
+container.appendChild(rules);
 
 const boardSize = 10;
 const gameBoard = new Array(boardSize)
-  .fill(null)
-  .map(() => new Array(boardSize).fill(null));
+  .fill('')
+  .map(() => new Array(boardSize).fill({ isOpen: false, isMine: false, value: '' }));
+
+for (let i = 0; i < gameBoard.length; i++) {
+  for (let j = 0; j < gameBoard[i].length; j++) {
+    gameBoard[i][j].isOpen=false;
+    gameBoard[i][j].isMine=false;
+  }}
+
+let numUnopened = 100;
+let numMines = 10;
+let numFlags=0;
+let numOpened =0;
+clicks.innerHTML = `Clicks: ${numOpened}`;
+
+
+
 
 const renderBoard = () => {
   gameBoard.forEach((row, rowIndex) => {
@@ -23,32 +48,59 @@ const renderBoard = () => {
       cellElem.className = 'cell';
       cellElem.setAttribute('data-row', rowIndex);
       cellElem.setAttribute('data-col', colIndex);
-      if (cell === 'X') {
-        cellElem.classList.add('mine');
-      }
+     
       rowElem.appendChild(cellElem);
     });
     grid.appendChild(rowElem);
   });
-  const cells = document.querySelectorAll('.cell');
-  handleBoardClick(cells);
 };
 
 renderBoard();
 
-const placeMines = (numMines = 10) => {
+const placeMines = () => {
   let minesPlaced = 0;
   while (minesPlaced < numMines) {
     const row = Math.floor(Math.random() * boardSize);
     const col = Math.floor(Math.random() * boardSize);
     if (!gameBoard[row][col] || gameBoard[row][col] !== 'X') {
       gameBoard[row][col] = 'X';
+      const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      cell.classList.add('mine');
       minesPlaced++;
     }
   }
+  console.log(minesPlaced);
+  const cells = document.querySelectorAll('.cell');
+  handleBoardClick(cells);
 };
 
-placeMines();
+let startTime = null;
+let timerId = null;
+
+document.querySelector('.game-board').addEventListener('click', handleFirstClick);
+
+function increaseClicks() {
+  numOpened++;
+  clicks.innerHTML = `Clicks: ${numOpened}`;
+}
+
+function handleFirstClick(event) {
+  if (!startTime) {
+    startTime = Date.now();
+    timerId = setInterval(updateElapsedSeconds, 1000);}
+   
+    console.log(numOpened)
+  
+  placeMines();
+  handleClick(event);
+  document.querySelector('.game-board').removeEventListener('click', handleFirstClick);
+}
+
+function updateElapsedSeconds() {
+  const timeElapsed = Math.floor((Date.now() - startTime) / 1000);
+  time.textContent = `Time: ${timeElapsed} seconds`;
+}
+
 
 function handleBoardClick(cells) {
   cells.forEach((cell) => {
@@ -57,9 +109,9 @@ function handleBoardClick(cells) {
 }
 
 const announce = document.createElement('div');
-function handleClick() {
-  const row = this.getAttribute('data-row');
-  const col = this.getAttribute('data-col');
+function handleClick(event) {
+  const row = event.target.getAttribute('data-row');
+  const col = event.target.getAttribute('data-col');
 
   if (gameBoard[row][col] === 'X') {
     announce.classList.add('game-over');
@@ -69,32 +121,33 @@ function handleClick() {
     cells.forEach((cell) => {
       cell.removeEventListener('click', handleClick);
     });
+    clearInterval(timerId);
   } else {
     const surroundingMines = countSurroundingMines(row, col);
-    this.textContent = surroundingMines;
-    this.style.whiteSpace = 'nowrap';
-
+    event.target.textContent = surroundingMines;
+    gameBoard[row][col].isOpen = true;
     switch (surroundingMines) {
     case 0:
-      this.classList.add('white');
+      event.target.classList.add('white');
       break;
     case 1:
-      this.classList.add('blue');
+      event.target.classList.add('blue');
       break;
     case 2:
-      this.classList.add('green');
+      event.target.classList.add('green');
       break;
     case 3:
-      this.classList.add('yellow');
+      event.target.classList.add('yellow');
       break;
     case 4:
-      this.classList.add('orange');
+      event.target.classList.add('orange');
       break;
     default:
-      this.classList.add('red');
+      event.target.classList.add('red');
       break;
     }
-    this.removeEventListener('click', handleClick);
+    event.target.removeEventListener('click', handleClick);
+    checkGameComplete(row,col);
   }
 }
 
@@ -107,21 +160,46 @@ newGame.addEventListener('click', () => {
 function countSurroundingMines(row, col) {
   let count = 0;
 
-  for (
-    let i = Math.max(row - 1, 0);
-    i <= Math.min(row + 1, gameBoard.length - 1);
-    i++
-  ) {
-    for (
-      let j = Math.max(col - 1, 0);
-      j <= Math.min(col + 1, gameBoard[0].length - 1);
-      j++
-    ) {
-      if (gameBoard[i][j] === 'X') {
-        count++;
-      }
+  let surroundingFields = [
+    [+row-1, +col-1], [+row-1, +col], [+row-1, +col+1],
+    [+row, +col-1], [+row, +col+1],
+    [+row+1, +col-1], [+row+1, +col], [+row+1, +col+1]
+  ];
+  surroundingFields = surroundingFields.filter(field => field[0] >= 0 && field[1] >= 0);
+  surroundingFields.forEach(field => {
+    const [row, col] = field;
+    if (gameBoard[row] && gameBoard[row][col] === 'X') {
+      count++;
     }
-  }
-  count -= gameBoard[row][col] === 'X' ? 1 : 0;
+  });
   return count;
 }
+
+function checkGameComplete(row,col) {
+  if (gameBoard[row][col] && !(gameBoard[row][col]==='X')) {
+    increaseClicks();
+    console.log(numOpened);
+    
+  }
+  if (!(gameBoard[row][col]==='X')) {
+    numUnopened=numUnopened-1;
+    console.log(numUnopened);
+  }
+  /*if (gameBoard[row][col].isMine) {
+        numMines++;
+        console.log(isMine)
+      }*/
+  
+
+  if (numUnopened === numMines && numFlags === numMines) {
+    const message = document.createElement('div');
+    message.textContent= 'Hooray! You found all mines in ' + timeElapsed + ' seconds and ' + numOpened + ' moves!';
+    document.body.appendChild(message);
+    return true;
+  }
+  else {
+    return false;}
+  
+}
+
+
