@@ -5,7 +5,7 @@ const grid = document.createElement("div");
 grid.className = "game-board";
 container.appendChild(grid);
 const newGame = document.createElement("button");
-newGame.className = "new-game";
+newGame.className = "button";
 newGame.textContent = "New Game";
 container.appendChild(newGame);
 const table = document.createElement("div");
@@ -63,6 +63,7 @@ let startTime = null;
 let timerId = null;
 
 const toggleButton = document.createElement("button");
+toggleButton.className = "button";
 container.appendChild(toggleButton);
 toggleButton.innerHTML = "Dark Theme";
 
@@ -91,6 +92,7 @@ toggleButton.addEventListener("click", function () {
 let resultsChart = document.createElement("div");
 container.appendChild(resultsChart);
 let showScore = document.createElement("button");
+showScore.className = "button";
 showScore.innerText = "Show last 10 scores";
 container.appendChild(showScore);
 showScore.onclick = function () {
@@ -145,9 +147,8 @@ function setDifficulty(event) {
   const gameBoard = new Array(boardSize)
     .fill("")
     .map(() =>
-      new Array(boardSize).fill({ isOpen: false, isMine: false, value: "" })
+      new Array(boardSize).fill({ isOpen: false, isMine: false, value: "", color: ""  })
     );
-  console.log(gameBoard);
 
   for (let i = 0; i < gameBoard.length; i++) {
     for (let j = 0; j < gameBoard[i].length; j++) {
@@ -160,9 +161,10 @@ function setDifficulty(event) {
 }
 
 window.onload = function () {
-  // есть баг, неправильно открывает ячейки вокруг мин
   let boardSize = localStorage.getItem("boardSize");
   let numMines = localStorage.getItem("numMines");
+  let gameBoard = JSON.parse(localStorage.getItem("gameBoard")); 
+  console.log(gameBoard);
 
   if (boardSize && numMines) {
     const options = document.querySelectorAll("option");
@@ -181,12 +183,31 @@ window.onload = function () {
       setDifficulty({ target: selectedOption });
     }
   }
+  
+  gameBoard.forEach((row, rowIndex) => {
+    console.log(rowIndex)
+    const rowElem = document.createElement("div");
+    rowElem.className = "row";
+    row.forEach((cell, colIndex) => {
+      const cellElem = document.createElement("div");
+      cellElem.className = "cell";
+      cellElem.setAttribute("data-row", rowIndex);
+      cellElem.setAttribute("data-col", colIndex);
+      console.log(gameBoard[rowIndex][colIndex])
+      if (gameBoard[rowIndex][colIndex].isOpen) { 
+        cellElem.style.backgroundColor = gameBoard[rowIndex][colIndex].color; 
+      }
+  
+      rowElem.appendChild(cellElem);
+    });
+    grid.appendChild(rowElem);
+  });
 };
 
 let gameBoard = new Array(boardSize)
   .fill("")
   .map(() =>
-    new Array(boardSize).fill({ isOpen: false, isMine: false, value: "" })
+    new Array(boardSize).fill({ isOpen: false, isMine: false, value: "", color: ""  })
   );
 
 for (let i = 0; i < gameBoard.length; i++) {
@@ -209,10 +230,9 @@ const renderBoard = () => {
   let gameBoard = new Array(boardSize)
     .fill("")
     .map(() =>
-      new Array(boardSize).fill({ isOpen: false, isMine: false, value: "" })
+      new Array(boardSize).fill({ isOpen: false, isMine: false, value: "", color: "" })
     );
   gameBoard.forEach((row, rowIndex) => {
-    //ошибка при выборе новой игры
     const rowElem = document.createElement("div");
     rowElem.className = "row";
     row.forEach((cell, colIndex) => {
@@ -233,7 +253,7 @@ const placeMines = () => {
   gameBoard = new Array(boardSize)
     .fill("")
     .map(() =>
-      new Array(boardSize).fill({ isOpen: false, isMine: false, value: "" })
+      new Array(boardSize).fill({ isOpen: false, isMine: false, value: "", color: ""  })
     );
 
   let minesPlaced = 0;
@@ -295,7 +315,9 @@ document.querySelector(".game-board").addEventListener("click", (event) => {
 
 function increaseClicks() {
   numOpened++;
+  console.log(numOpened)
   return numOpened;
+  
 }
 
 const clearBoard = () => {
@@ -304,13 +326,14 @@ const clearBoard = () => {
     cell.classList.remove("mine");
     for (let i = 0; i < gameBoard.length; i++) {
       for (let j = 0; j < gameBoard[i].length; j++) {
-        gameBoard[i][j] = { isOpen: false, isMine: false, value: "" };
+        gameBoard[i][j] = { isOpen: false, isMine: false, value: "", color: "" };
       }
     }
   });
 };
 
 function handleFirstClick(event) {
+  
   if (!startTime) {
     startTime = Date.now();
     timerId = setInterval(updateElapsedSeconds, 1000);
@@ -319,9 +342,7 @@ function handleFirstClick(event) {
   placeMines();
   handleClick(event);
 
-  document
-    .querySelector(".game-board")
-    .removeEventListener("click", handleFirstClick);
+  gameBoard.removeEventListener("click", handleFirstClick);
 }
 
 function updateElapsedSeconds() {
@@ -364,7 +385,7 @@ function handleClick(event) {
       if (row == i) {
         for (let j = 0; j < gameBoard[i].length; j++) {
           if (col == j) {
-            gameBoard[i][col] = { isOpen: true, isMine: false, value: "" };
+            gameBoard[i][col] = { isOpen: true, isMine: false, value: "", color: ""  };
           }
         }
       }
@@ -373,7 +394,7 @@ function handleClick(event) {
     event.target.textContent = surroundingMines;
     if (surroundingMines === 0) {
       event.target.classList.add("white");
-      // openAdjacentCells(row, col);
+      openAdjacentCells(row, col);
     }
     switch (surroundingMines) {
       case 1:
@@ -402,17 +423,32 @@ function handleClick(event) {
 
 let openedCellsCount = 0;
 
-/*function openAdjacentCells(row, col) { // ошибка в рекурсии в хард
+function openAdjacentCells(row, col) { // ошибка в рекурсии в хард
   for (let i = row - 1; i <= row + 1; i++) {
     for (let j = col - 1; j <= col + 1; j++) {
       if (i >= 0 && i < boardSize && j >= 0 && j < boardSize && !(i == row && j == col)) {
         
         const cell = document.querySelector(`[data-row="${i}"][data-col="${j}"]`);
+        gameBoard[i][j] = { isOpen: true, isMine: false, value: "", color: ""  };
+        
+        if (cell.classList.contains('white')) { 
+          gameBoard[i][j].color = 'white'; }
+        if (cell.classList.contains('blue')) { 
+          gameBoard[i][j].color = 'blue'; 
+        } else if (cell.classList.contains('green')) { 
+          gameBoard[i][j].color = 'green'; 
+        } else if (cell.classList.contains('yellow')) { 
+          gameBoard[i][j].color = 'yellow'; 
+        } else if (cell.classList.contains('orange')) { 
+          gameBoard[i][j].color = 'orange'; 
+        } else if (cell.classList.contains('red')) { 
+          gameBoard[i][j].color = 'red'; 
+        }
+        localStorage.setItem("gameBoard", JSON.stringify(gameBoard));
 
-        console.log(gameBoard);
         if (!cell.classList.contains('white') && 
         !cell.classList.contains('mine')) {
-          gameBoard[i][j].isOpen=true;
+          
           const surroundingMines = countSurroundingMines(i, j);
           cell.textContent = surroundingMines;
           switch (surroundingMines) {
@@ -446,8 +482,8 @@ let openedCellsCount = 0;
       }
     }
   }
-  
-}*/
+}
+
 
 newGame.addEventListener("click", () => {
   grid.innerHTML = "";
@@ -464,11 +500,13 @@ let numMines = JSON.parse(localStorage.getItem('numMines'));
   time.textContent = "Time: 0 seconds";
   clearBoard();
   isFirstClick = true;
-  const cells = document.querySelectorAll(".cell");
-  cells.forEach((cell) => {
-    cell.addEventListener("contextmenu", addFlag);
+  document.querySelector(".game-board").addEventListener("click", (event) => {
+    if (isFirstClick) {
+      isFirstClick = false;
+      handleFirstClick(event);
+    }
   });
-  handleBoardClick(cells);
+  
 }
 );
 
@@ -524,14 +562,16 @@ function congratulateMessage(numUnopened) {
 }
 
 function checkGameComplete(row, col) {
+ 
   if (gameBoard[row][col].isOpen && !(gameBoard[row][col] === "X")) {
-    let newValue = increaseClicks();
-    clicks.innerHTML = `Clicks: ${newValue}`;
+    increaseClicks();
+    clicks.innerHTML = `Clicks: ${numOpened}`;
   }
 
   const closedObjects = gameBoard.flat().filter((obj) => !obj.isOpen);
   let numUnopened = closedObjects.length;
-
+console.log(numUnopened);
+console.log(numOpened)
   // считает неправильно! не учитывает рекурсию
   congratulateMessage(numUnopened);
 }

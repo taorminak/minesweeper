@@ -73,10 +73,10 @@
   font-size: 1.2rem;
 }
 
-.new-game {
+.button {
   background-color: #7d7f85;
   color: #fef9fc;
-  width: 7rem;
+  width: auto;
   height: auto;
   min-height: 2.5rem;
   border: 1px solid #64666a;
@@ -160,8 +160,8 @@
     margin: 1rem;
     font-size: 0.9rem;
   }
-  .new-game {
-    width: 8rem;
+  .button {
+    width: 10rem;
     height: 3rem;
     margin-top: 1rem;
   }
