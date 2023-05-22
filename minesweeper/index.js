@@ -163,12 +163,12 @@ function setDifficulty(event) {
 window.onload = function () { 
   if (option1.hasAttribute("selected")) {
     boardSize = 10;
-    numMines = 10;}
-    console.log(gameBoard)
-    renderBoard(gameBoard);
+    numMines = 10;
+    renderBoard();
+    }
 }
 
-window.addEventListener("load", function() {
+/*window.addEventListener("load", function() {
  
   let boardSize = localStorage.getItem("boardSize");
   let numMines = localStorage.getItem("numMines");
@@ -211,7 +211,7 @@ window.addEventListener("load", function() {
     });
     grid.appendChild(rowElem);
   });
-});
+});*/
 
 let gameBoard = new Array(boardSize)
   .fill("")
@@ -243,6 +243,7 @@ const renderBoard = () => {
     .map(() =>
       new Array(boardSize).fill({ isOpen: false, isMine: false, value: "", color: "" })
     );
+    console.log(gameBoard)
   gameBoard.forEach((row, rowIndex) => {
     const rowElem = document.createElement("div");
     rowElem.className = "row";
