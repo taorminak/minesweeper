@@ -63,7 +63,7 @@
 
 .rules {
   width: 80%;
-  height: 2.5rem;
+  height: auto;
   text-align: center;
   font-size: 1.2rem;
   margin: 10px;
