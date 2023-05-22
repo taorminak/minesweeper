@@ -28,64 +28,158 @@ const audioExplosion = new Audio('./assets/audio/explosion.mp3');
 const audioFlag = new Audio('./assets/audio/flag.mp3');
 const audioOpen = new Audio('./assets/audio/open.wav');
 const audioWin = new Audio('./assets/audio/win.mp3');
-const select = document.createElement("select");
+const select = document.createElement('select');
 container.appendChild(select);
-select.id = "difficulty-select";
-select.addEventListener("change", setDifficulty);
-const option1 = document.createElement("option");
-option1.value = "easy";
-option1.setAttribute("selected", "");
-option1.textContent = "Easy";
+select.id = 'difficulty-select';
+select.addEventListener('change', setDifficulty);
+const option1 = document.createElement('option');
+option1.value = 'easy';
+option1.setAttribute('selected', '');
+option1.textContent = 'Easy';
 
-const option2 = document.createElement("option");
-option2.value = "medium";
-option2.textContent = "Medium";
+const option2 = document.createElement('option');
+option2.value = 'medium';
+option2.textContent = 'Medium';
 
-const option3 = document.createElement("option");
-option3.value = "hard";
-option3.textContent = "Hard";
+const option3 = document.createElement('option');
+option3.value = 'hard';
+option3.textContent = 'Hard';
 
 select.appendChild(option1);
 select.appendChild(option2);
 select.appendChild(option3);
 
+let boardSize;
+//let numUnopened = 100;
+let numMines = 10;
+let numFlags=0;
+let numOpened =0;
+clicks.innerHTML = `Clicks: ${numOpened}`;
+let isFirstClick = true;
+let isGameOver = false;
+let isGameWon = false;
+
+let startTime = null;
+let timerId = null;
+
+const toggleButton = document.createElement('button');
+container.appendChild(toggleButton);
+toggleButton.innerHTML = 'Dark Theme';
+
+const body = document.body;
+const currentTheme = localStorage.getItem('theme');
+
+if (currentTheme) {
+  body.classList.add(currentTheme);
+  toggleButton.innerHTML = currentTheme === 'dark-theme' ? 'Light Theme' : 'Dark Theme';
+}
+
+toggleButton.addEventListener('click', function () {
+  body.classList.toggle('dark-theme');
+  body.classList.toggle('light-theme');
+
+  if (body.classList.contains('light-theme')) {
+    toggleButton.innerHTML = 'Dark Theme';
+    localStorage.setItem('theme', 'light-theme'); 
+  } else {
+    toggleButton.innerHTML = 'Light Theme';
+    localStorage.setItem('theme', 'dark-theme');
+  }
+});
+
+let resultsChart = document.createElement('div');
+container.appendChild(resultsChart);
+let showScore = document.createElement('button');
+showScore.innerText = 'Show last 10 scores';
+container.appendChild(showScore);
+showScore.onclick = function() {
+  let highScores = JSON.parse(localStorage.getItem('highScores'));
+  let table = '<table>';
+  highScores.forEach(function(score, index) {
+    table += '<tr><td>' + (index + 1) + '</td><td>' + score + '</td></tr>';
+  });
+  table += '</table>';
+  resultsChart.innerHTML = table;
+  if (showScore.innerText === 'Show last 10 scores') {
+    showScore.innerText = 'Hide Results';
+    resultsChart.style.display = 'block';
+
+  } else {
+    showScore.innerText = 'Show last 10 scores';
+    resultsChart.style.display = 'none';
+  }
+};
+
+let lastScore;
+function saveHighScores(isGameOver, isGameWon, lastScore) {
+
+  let highScores = JSON.parse(localStorage.getItem('highScores'));
+  if (!highScores) {
+    highScores = [];
+  }
+  if (isGameOver) {
+    if (highScores.length >= 10) {
+      highScores.shift(); 
+    }
+    highScores.push(lastScore);
+    localStorage.setItem('highScores', JSON.stringify(highScores));
+  }
+  else {
+    localStorage.setItem('highScores', JSON.stringify([lastScore]));
+  }
+}
+
 function setDifficulty(event) {
   const selectedDifficulty = event.target.value;
-  if (selectedDifficulty === "easy" && option1.hasAttribute("selected")) {
+  if (selectedDifficulty === 'easy' && option1.hasAttribute('selected')) {
     boardSize = 10;
     numMines = 10;
-  } else if (selectedDifficulty === "medium") {
+  } else if (selectedDifficulty === 'medium') {
     boardSize = 15;
     numMines = 25;
-  } else if (selectedDifficulty === "hard") {
+  } else if (selectedDifficulty === 'hard') {
     boardSize = 20;
     numMines = 40;
   }
+  localStorage.setItem('boardSize', boardSize);
+  localStorage.setItem('numMines', numMines);
   deleteBoard();
   const gameBoard = new Array(boardSize)
-  .fill('')
-  .map(() => new Array(boardSize).fill({ isOpen: false, isMine: false, value: '' }));
-  console.log(gameBoard)
+    .fill('')
+    .map(() => new Array(boardSize).fill({ isOpen: false, isMine: false, value: '' }));
+  console.log(gameBoard);
 
-for (let i = 0; i < gameBoard.length; i++) {
-  for (let j = 0; j < gameBoard[i].length; j++) {
-    gameBoard[i][j].isOpen=false;
-    gameBoard[i][j].isMine=false;
-  }}
-  console.log(gameBoard)
-  renderBoard(gameBoard);
+  for (let i = 0; i < gameBoard.length; i++) {
+    for (let j = 0; j < gameBoard[i].length; j++) {
+      gameBoard[i][j].isOpen=false;
+      gameBoard[i][j].isMine=false;
+    }}
+  renderBoard();
   handleFirstClick(event);
-};
-
-let boardSize;
-
-if (option1.hasAttribute("selected")) {
-  boardSize=10;
-} 
-else if (option2.hasAttribute("selected")) {
-  boardSize = 15;
 }
-else { boardSize = 20;};
+
+window.onload = function () { // есть баг, неправильно открывает ячейки вокруг мин
+  let boardSize = localStorage.getItem('boardSize');
+  let numMines = localStorage.getItem('numMines');
+
+  if (boardSize && numMines) {
+    const options = document.querySelectorAll('option');
+    let selectedOption = null;
+
+    if (boardSize === '10' && numMines === '10') {
+      selectedOption = options[0];
+    } else if (boardSize === '15' && numMines === '25') {
+      selectedOption = options[1];
+    } else if (boardSize === '20' && numMines === '40') {
+      selectedOption = options[2];
+    }
+
+    if (selectedOption !== null) {
+      selectedOption.selected = true;
+      setDifficulty({ target: selectedOption });
+    }
+  }
+};
 
 let gameBoard = new Array(boardSize)
   .fill('')
@@ -97,30 +191,20 @@ for (let i = 0; i < gameBoard.length; i++) {
     gameBoard[i][j].isMine=false;
   }}
 
-  function deleteBoard() {
-    const oldBoard = document.querySelectorAll('.row');
+function deleteBoard() {
+  const oldBoard = document.querySelectorAll('.row');
   if (oldBoard.length > 0) {
     oldBoard.forEach((row) => {
       row.remove();
     });
   }
-  }
-  
-  
+}
 
-let numUnopened = 100;
-let numMines = 10;
-let numFlags=0;
-let numOpened =0;
-clicks.innerHTML = `Clicks: ${numOpened}`;
-let isFirstClick = true;
-
-
-let startTime = null;
-let timerId = null;
-
-const renderBoard = (gameBoard) => {
-  gameBoard.forEach((row, rowIndex) => {
+const renderBoard = () => {
+  let gameBoard = new Array(boardSize)
+    .fill('')
+    .map(() => new Array(boardSize).fill({ isOpen: false, isMine: false, value: '' }));
+  gameBoard.forEach((row, rowIndex) => { //ошибка при выборе новой игры
     const rowElem = document.createElement('div');
     rowElem.className = 'row';
     row.forEach((cell, colIndex) => {
@@ -139,10 +223,10 @@ renderBoard(gameBoard);
 
 const placeMines = () => {
   gameBoard = new Array(boardSize)
-  .fill('')
-  .map(() => new Array(boardSize).fill({ isOpen: false, isMine: false, value: '' }));
+    .fill('')
+    .map(() => new Array(boardSize).fill({ isOpen: false, isMine: false, value: '' }));
 
-console.log(numMines, boardSize, gameBoard)
+  console.log(numMines, boardSize, gameBoard);
   let minesPlaced = 0;
   let isFirstClick = true;
   while (minesPlaced < numMines) {
@@ -195,8 +279,8 @@ document.querySelector('.game-board').addEventListener('click', (event) => {
 });
 
 function increaseClicks() {
-        numOpened++;
-    console.log(numOpened);
+  numOpened++;
+  console.log(numOpened);
   return numOpened;
  
 }
@@ -241,13 +325,17 @@ function handleClick(event) {
 
   const row = event.target.getAttribute('data-row');
   const col = event.target.getAttribute('data-col');
-
-  if (gameBoard[row][col] && gameBoard[row][col] === 'X') { //есть ошибка
+  
+  if (gameBoard[row][col] === 'X') { //есть ошибка
     event.target.classList.add('mine-displayed');
     audioExplosion.play();
     announce.classList.add('game-over');
     announce.textContent = 'Game over! Try again!';
     container.appendChild(announce);
+    isGameOver = true;
+    isGameWon = false;
+    lastScore = 'Loose';
+    saveHighScores(isGameOver, isGameWon, lastScore);
 
     const cells = document.querySelectorAll('.cell');
     cells.forEach((cell) => {
@@ -257,12 +345,20 @@ function handleClick(event) {
     clearInterval(timerId);
   } else {
     audioOpen.play();
-    gameBoard[row][col].isOpen = true;
+    for (let i=0; i<gameBoard.length; i++) {
+      if (row == i) {
+        for (let j=0; j<gameBoard[i].length; j++) {
+          if (col == j) {
+            gameBoard[i][col] ={ isOpen: true, isMine: false,  value: '' };
+          }
+        }
+      }
+    }
     const surroundingMines = countSurroundingMines(row, col);
     event.target.textContent = surroundingMines;
     if (surroundingMines === 0) {
       event.target.classList.add('white');
-      openAdjacentCells(row, col);
+      // openAdjacentCells(row, col);
     }
     switch (surroundingMines) {
     case 1:
@@ -292,17 +388,17 @@ function handleClick(event) {
 
 let openedCellsCount = 0;
 
-function openAdjacentCells(row, col) {
+/*function openAdjacentCells(row, col) { // ошибка в рекурсии в хард
   for (let i = row - 1; i <= row + 1; i++) {
     for (let j = col - 1; j <= col + 1; j++) {
       if (i >= 0 && i < boardSize && j >= 0 && j < boardSize && !(i == row && j == col)) {
         
         const cell = document.querySelector(`[data-row="${i}"][data-col="${j}"]`);
 
-        console.log(cell)
+        console.log(gameBoard);
         if (!cell.classList.contains('white') && 
         !cell.classList.contains('mine')) {
-          
+          gameBoard[i][j].isOpen=true;
           const surroundingMines = countSurroundingMines(i, j);
           cell.textContent = surroundingMines;
           switch (surroundingMines) {
@@ -337,7 +433,7 @@ function openAdjacentCells(row, col) {
     }
   }
   
-}
+}*/
 
 
 newGame.addEventListener('click', () => {
@@ -375,18 +471,21 @@ function countSurroundingMines(row, col) {
   return count;
 }
 
-function congratulateMessage() {
-  console.log(numUnopened);
-    console.log(numMines);
-    console.log(numOpened);
+function congratulateMessage(numUnopened) {
+ 
+  console.log(numMines);
+  console.log(numOpened);
   if (numUnopened == numMines && numOpened == (boardSize * boardSize) - numMines) {
     
     clearInterval(timerId);
-    audioWin.play()
+    audioWin.play();
     let string = time.textContent;
     let new_string = string.replace('Time: ', '');
-
     messageCongrats.innerHTML = 'Hooray! You found all mines in ' + new_string + ' seconds and ' + numOpened + ' moves!';
+    isGameWon = true;
+    isGameOver = true;
+    lastScore = 'Won in '+ new_string + ' seconds and ' + numOpened + ' moves!';
+    saveHighScores(isGameOver, isGameWon, lastScore);
     return true;
   } else {
     return false;
@@ -394,16 +493,23 @@ function congratulateMessage() {
 }
 
 function checkGameComplete(row,col) {
- 
+  console.log(gameBoard);
   if (gameBoard[row][col].isOpen && !(gameBoard[row][col]==='X')) {
     let newValue = increaseClicks();
     clicks.innerHTML = `Clicks: ${newValue}`;
     
   }
-  if (!(gameBoard[row][col]==='X')) {
-    numUnopened=numUnopened-1; // считает неправильно! не учитывает рекурсию
-  }
-  congratulateMessage();
+ 
+ 
+  const closedObjects = gameBoard.flat().filter(obj => !obj.isOpen);
+  let numUnopened =  closedObjects.length;
+
+  
+  
+  // считает неправильно! не учитывает рекурсию
+  console.log(numUnopened);
+  
+  congratulateMessage(numUnopened);
 }
 
 
