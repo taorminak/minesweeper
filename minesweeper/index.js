@@ -50,6 +50,31 @@ select.appendChild(option1);
 select.appendChild(option2);
 select.appendChild(option3);
 
+const selectType = document.createElement("select");
+container.appendChild(selectType);
+selectType.id = "type-select";
+let optionOne = document.createElement("option");
+optionOne.value = "none";
+optionOne.setAttribute("selected", "");
+optionOne.textContent = "None adjacent cells";
+selectType.appendChild(optionOne);
+
+let optionTwo = document.createElement("option");
+optionTwo.value = "open";
+optionTwo.textContent = "Open adjacent cells";
+selectType.appendChild(optionTwo);
+
+let optionThree = document.createElement("option");
+optionThree.value = "flag";
+optionThree.textContent = "Add flag";
+selectType.appendChild(optionThree);
+
+let selectOption = "none";
+
+selectType.addEventListener("change", function() {
+  selectOption = selectType.value;
+});
+
 let boardSize;
 let numMines = 10;
 let numFlags = 0;
@@ -166,6 +191,7 @@ window.onload = function () {
     numMines = 10;
     renderBoard();
     }
+    isFirstClick = true;
 }
 
 /*window.addEventListener("load", function() {
@@ -259,7 +285,7 @@ const renderBoard = () => {
   });
 };
 
-const placeMines = () => {
+const placeMines = (clickRow, clickCol) => {
   gameBoard = new Array(boardSize)
     .fill("")
     .map(() =>
@@ -278,6 +304,7 @@ const placeMines = () => {
           .querySelector(`[data-row="${row}"][data-col="${col}"]`)
           .classList.contains("mine")
       ) {
+        
         continue;
       }
       gameBoard[row][col] = "X";
@@ -320,6 +347,7 @@ document.querySelector(".game-board").addEventListener("click", (event) => {
   if (isFirstClick) {
     isFirstClick = false;
     handleFirstClick(event);
+    document.querySelector(".game-board").removeEventListener("click", handleClick); 
   }
 });
 
@@ -352,7 +380,6 @@ function handleFirstClick(event) {
   placeMines();
   handleClick(event);
 
-  gameBoard.removeEventListener("click", handleFirstClick);
 }
 
 function updateElapsedSeconds() {
@@ -404,7 +431,9 @@ function handleClick(event) {
     event.target.textContent = surroundingMines;
     if (surroundingMines === 0) {
       event.target.classList.add("white");
-      openAdjacentCells(row, col);
+      if (selectOption === "open") {
+        openAdjacentCells(row, col);
+      }
     }
     switch (surroundingMines) {
       case 1:

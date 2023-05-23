@@ -136,6 +136,21 @@
   background-color: #000000;
   color: #ffffff;
 }
+select {
+  background-color: #fff;
+  border: 2px solid #f1f1f1;
+  color: #000;
+  padding: 5px;
+  font-size: 16px;
+  margin: 5px;
+  width: 200px;
+}
+
+select:hover {
+  border-color: #000;
+}
+
+
 
 
 @media (max-width: 500px) {
