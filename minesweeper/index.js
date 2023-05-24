@@ -392,7 +392,7 @@ function updateElapsedSeconds() {
   const timeElapsed = Math.floor((Date.now() - startTime) / 1000);
   const minutes = Math.floor(timeElapsed / 60);
   const seconds = timeElapsed % 60;
-  time.textContent = `Time: ${minutes} min ${seconds} sec`;
+  time.textContent = `Time: ${minutes} min ${seconds} sec `;
 } 
 
 function handleBoardClick(cells) {
@@ -584,13 +584,13 @@ function congratulateMessage(numClicks) {
   messageCongrats.innerHTML =
       'Hooray! You found all mines in ' +
       new_string +
-      ' seconds and ' +
+      '  and ' +
       numClicks +
       ' moves!';
   isGameWon = true;
   isGameOver = true;
   lastScore =
-      'Won in ' + new_string + ' seconds and ' + numClicks + ' moves!';
+      'Won in ' + new_string + '  and ' + numClicks + ' moves!';
   saveHighScores(isGameOver, isGameWon, lastScore);
   return true;
  
