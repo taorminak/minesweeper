@@ -13,6 +13,9 @@ table.className = 'table';
 container.insertBefore(table, container.firstChild);
 const clicks = document.createElement('div');
 clicks.className = 'clicks';
+const flags = document.createElement('div');
+flags.className = 'flags';
+table.insertBefore(flags, table.firstChild);
 table.insertBefore(clicks, table.firstChild);
 const time = document.createElement('div');
 time.className = 'time';
@@ -78,6 +81,7 @@ selectType.addEventListener('change', function() {
 let boardSize;
 let numMines = 10;
 let numFlags = 0;
+flags.innerHTML = `Flags: ${numFlags}`;
 let numClicks = 0;
 clicks.innerHTML = `Clicks: ${numClicks}`;
 let isFirstClick = true;
@@ -336,10 +340,12 @@ function addFlag(event) {
     this.isMine = false;
     numFlags--;
   } else {
+    console.log(this);
     audioFlag.play();
     this.classList.add('flag');
     this.isMine = true;
     numFlags++;
+    flags.innerHTML = `Flags: ${numFlags}`;
   }
 }
 
@@ -384,8 +390,10 @@ function handleFirstClick(event) {
 
 function updateElapsedSeconds() {
   const timeElapsed = Math.floor((Date.now() - startTime) / 1000);
-  time.textContent = `Time: ${timeElapsed} seconds`;
-}
+  const minutes = Math.floor(timeElapsed / 60);
+  const seconds = timeElapsed % 60;
+  time.textContent = `Time: ${minutes} min ${seconds} sec`;
+} 
 
 function handleBoardClick(cells) {
   cells.forEach((cell) => {
