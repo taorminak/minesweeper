@@ -88,8 +88,14 @@ let isFirstClick = true;
 let isGameOver = false;
 let isGameWon = false;
 
+
 let startTime = null;
 let timerId = null;
+
+const mines = document.createElement('div');
+mines.className = 'mines';
+table.insertBefore(mines, table.firstChild);
+//mines.textContent= `Mines: ${numMines}`;
 
 const toggleButton = document.createElement('button');
 toggleButton.className = 'button';
@@ -163,12 +169,15 @@ function setDifficulty(event) {
   if (selectedDifficulty === 'easy' && option1.hasAttribute('selected')) {
     boardSize = 10;
     numMines = 10;
+    mines.textContent= `Mines: ${numMines}`;
   } else if (selectedDifficulty === 'medium') {
     boardSize = 15;
     numMines = 25;
+    mines.textContent= `Mines: ${numMines}`;
   } else if (selectedDifficulty === 'hard') {
     boardSize = 20;
     numMines = 40;
+    mines.textContent= `Mines: ${numMines}`;
   }
   localStorage.setItem('boardSize', boardSize);
   localStorage.setItem('numMines', numMines);
@@ -196,6 +205,7 @@ window.onload = function () {
     renderBoard();
   }
   isFirstClick = true;
+  mines.textContent= `Mines: ${numMines}`;
 };
 
 /*window.addEventListener("load", function() {
